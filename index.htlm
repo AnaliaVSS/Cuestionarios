@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cuestionario: Pensamiento computacional</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --card:#ffffff; --ink:#1d2330; --muted:#5b6475; --line:#dde1e8;
+    --accent:#2f5bd3; --accent-ink:#ffffff; --ok:#1f7a4d; --ok-bg:#e7f5ee; --bad:#b3261e; --bad-bg:#fcebea;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:820px;margin:0 auto;padding:24px 16px 48px}
+  header h1{font-size:1.5rem;margin:0 0 4px}
+  header p{margin:0 0 4px;color:var(--muted)}
+  .bar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 0;margin:12px 0 8px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .progress{color:var(--muted);font-size:.95rem}
+  section{margin-top:28px}
+  section h2{font-size:1.15rem;margin:0 0 4px}
+  section .hint{color:var(--muted);margin:0 0 12px;font-size:.95rem}
+  .q{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:10px 0}
+  .q.ok{border-color:var(--ok);background:var(--ok-bg)}
+  .q.bad{border-color:var(--bad);background:var(--bad-bg)}
+  .q .stem{font-weight:600;margin-bottom:8px}
+  .q .num{color:var(--accent);margin-right:6px}
+  label.opt{display:flex;gap:8px;align-items:flex-start;padding:4px 0;cursor:pointer}
+  label.opt input{margin-top:5px}
+  .vf{display:flex;gap:18px;flex-wrap:wrap}
+  .just{margin-top:10px;padding:10px 12px;border-left:3px solid var(--accent);background:#f1f4fd;border-radius:6px}
+  .just[hidden]{display:none}
+  .just p{margin:0 0 6px;font-weight:600;font-size:.95rem}
+  select,input[type=text]{font:inherit;padding:6px 8px;border:1px solid #b9c0cc;border-radius:6px;background:#fff;color:var(--ink);max-width:100%}
+  input[type=text]{width:220px}
+  .match{display:grid;grid-template-columns:1fr;gap:6px}
+  .match .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .match .row .concept{min-width:130px;font-weight:600}
+  .col-b{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;margin:8px 0 12px}
+  .col-b ol{margin:0;padding-left:0;list-style:none}
+  .col-b li{padding:2px 0}
+  .bank{background:var(--card);border:1px dashed #b9c0cc;border-radius:10px;padding:10px 14px;margin:0 0 10px}
+  .bank span{display:inline-block;margin:2px 10px 2px 0;font-weight:600}
+  .fb{margin-top:8px;font-size:.93rem}
+  .fb:empty{display:none}
+  .q.ok .fb{color:var(--ok)}
+  .q.bad .fb{color:var(--bad)}
+  button{font:inherit;border:0;border-radius:8px;padding:10px 18px;cursor:pointer}
+  .primary{background:var(--accent);color:var(--accent-ink);font-weight:600}
+  .secondary{background:#e4e8f0;color:var(--ink)}
+  .result{margin-top:24px;padding:18px;border-radius:10px;background:var(--card);border:1px solid var(--line);text-align:center}
+  .result[hidden]{display:none}
+  .result .score{font-size:2rem;font-weight:700}
+  .warn{color:var(--bad);font-size:.95rem}
+  .actions{display:flex;gap:10px;justify-content:center;margin-top:24px;flex-wrap:wrap}
+  @media (max-width:520px){ input[type=text]{width:100%} .match .row .concept{min-width:0;width:100%} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Fundamentos del pensamiento computacional</h1>
+    <p>Cuestionario de autoevaluación · 24 preguntas · 1 punto cada una</p>
+    <p>Respondé todas las preguntas y presioná <strong>Corregir</strong>. Si marcás “Falso”, tenés que elegir la justificación correcta para obtener el punto.</p>
+  </header>
+
+  <div class="bar">
+    <span class="progress" id="progress">Respondidas: 0 de 24</span>
+    <button class="primary" id="btnCheckTop" type="button">Corregir</button>
+  </div>
+
+  <form id="quiz" autocomplete="off" onsubmit="return false">
+    <section id="s-vf">
+      <h2>Parte 1 · Verdadero o falso</h2>
+      <p class="hint">Si la afirmación es falsa, elegí por qué.</p>
+    </section>
+    <section id="s-match">
+      <h2>Parte 2 · Correlación</h2>
+      <p class="hint">Relacioná cada concepto computacional con su ejemplo. Cada letra se usa una sola vez.</p>
+    </section>
+    <section id="s-fill">
+      <h2>Parte 3 · Completar los espacios en blanco</h2>
+      <p class="hint">Escribí la palabra que falta. Podés usar el banco de palabras; sobran dos.</p>
+    </section>
+    <section id="s-mc">
+      <h2>Parte 4 · Opción múltiple</h2>
+      <p class="hint">Elegí una sola opción.</p>
+    </section>
+  </form>
+
+  <div class="result" id="result" hidden>
+    <div class="score" id="score"></div>
+    <div id="scoreMsg"></div>
+  </div>
+
+  <div class="actions">
+    <button class="primary" id="btnCheck" type="button">Corregir</button>
+    <button class="secondary" id="btnReset" type="button">Reintentar</button>
+  </div>
+  <p class="warn" id="warn" hidden></p>
+</div>
+
+<script>
+(function(){
+  // ---------- DATOS ----------
+  var VF = [
+    {s:"El pensamiento computacional es exclusivo de la asignatura informática.", v:false,
+     just:["Solo se aplica en matemática.","Es transversal y se aplica en todas las áreas.","Solo se puede aprender usando computadoras."], j:1},
+    {s:"Se puede desarrollar pensamiento computacional sin usar computadoras.", v:true,
+     fb:"Las actividades desenchufadas lo demuestran."},
+    {s:"En el enfoque del pensamiento computacional, los errores son una oportunidad de aprendizaje.", v:true,
+     fb:"La depuración forma parte natural del proceso."},
+    {s:"Programar y pensamiento computacional son lo mismo.", v:false,
+     just:["El pensamiento computacional es solo una parte de la programación.","No tienen ninguna relación entre sí.","Programar es una herramienta para desarrollar el pensamiento computacional, que es más amplio."], j:2},
+    {s:"Remezclar un proyecto implica reconocer la autoría del original.", v:true,
+     fb:"Es parte de la dimensión ética de reutilizar y remezclar."},
+    {s:"La abstracción consiste en agregar la mayor cantidad de detalles posible a un problema.", v:false,
+     just:["Consiste en quedarse con lo esencial y dejar de lado lo irrelevante.","Consiste en dividir el problema en partes más pequeñas.","Consiste en repetir instrucciones varias veces."], j:0}
+  ];
+
+  var MATCH_B = [
+    "a) El marcador de un partido que cambia con cada gol",
+    "b) Los pasos para lavarse los dientes, uno tras otro",
+    "c) “Cuando suena el timbre, salimos al recreo”",
+    "d) En una orquesta, cada instrumento sigue su partitura al mismo tiempo",
+    "e) “Da 10 saltos” en lugar de decir “salta” diez veces",
+    "f) “Si llueve, llevo paraguas; si no, llevo gorro”"
+  ];
+  var MATCH = [
+    {c:"Secuencia", a:"b"},
+    {c:"Bucle", a:"e"},
+    {c:"Evento", a:"c"},
+    {c:"Condicional", a:"f"},
+    {c:"Variable", a:"a"},
+    {c:"Paralelismo", a:"d"}
+  ];
+
+  var BANK = ["algoritmo","evento","depuración","abstracción","desenchufadas","variable","descomposición","bucle"];
+  var FILL = [
+    {pre:"Dividir un problema complejo en partes más pequeñas y manejables se llama", post:".", ok:["descomposicion","la descomposicion"], show:"descomposición"},
+    {pre:"La", post:"consiste en quedarse con lo esencial e ignorar los detalles irrelevantes.", ok:["abstraccion"], show:"abstracción"},
+    {pre:"Un", post:"es una secuencia ordenada, precisa y finita de pasos para resolver un problema.", ok:["algoritmo"], show:"algoritmo"},
+    {pre:"Un", post:"permite repetir instrucciones sin tener que escribirlas de nuevo.", ok:["bucle","ciclo","bucle de repeticion"], show:"bucle"},
+    {pre:"Encontrar y corregir errores en un programa de forma sistemática se llama", post:".", ok:["depuracion","depurar","la depuracion"], show:"depuración"},
+    {pre:"Las actividades", post:"trabajan conceptos computacionales sin usar computadoras.", ok:["desenchufadas","desenchufada"], show:"desenchufadas"}
+  ];
+
+  var MC = [
+    {s:"¿Cuál es la mejor definición de pensamiento computacional?",
+     o:["Saber usar computadoras y aplicaciones.","Formular problemas y soluciones de modo que puedan ser ejecutados por una persona o una máquina.","Aprender un lenguaje de programación.","Pensar de forma mecánica, como una computadora."], a:1,
+     fb:"Es la definición de Jeannette Wing."},
+    {s:"El plano del metro muestra estaciones y conexiones, pero no distancias reales ni calles. Esto es un ejemplo de:",
+     o:["Algoritmo","Bucle","Condicional","Abstracción"], a:3,
+     fb:"Conserva lo esencial y omite detalles irrelevantes."},
+    {s:"“Si la luz está en rojo, espero; si no, cruzo” es un ejemplo de:",
+     o:["Condicional","Secuencia","Bucle","Variable"], a:0,
+     fb:"Se toma una decisión según una condición."},
+    {s:"Según Brennan y Resnick, “probar y depurar” es:",
+     o:["Un concepto computacional","Una perspectiva computacional","Una práctica computacional","Un pilar del pensamiento computacional"], a:2,
+     fb:"Es algo que se hace al programar: una práctica."},
+    {s:"Un estudiante arma todo el programa y recién al final lo ejecuta. No logra encontrar dónde falla. ¿Qué práctica le faltó aplicar?",
+     o:["Reutilizar y remezclar","Ser incremental e iterativo","Expresarse","Conectarse"], a:1,
+     fb:"Probar después de cada pequeño avance permite ubicar el error enseguida."},
+    {s:"Un grupo se pregunta cómo decide una plataforma qué video recomendarle a cada persona. ¿Qué perspectiva computacional está en juego?",
+     o:["Expresarse","Conectarse","Iterar","Cuestionar"], a:3,
+     fb:"Se pregunta cómo funciona la tecnología y qué consecuencias tiene."}
+  ];
+
+  // ---------- UTILIDADES ----------
+  function el(tag, attrs, html){
+    var e=document.createElement(tag);
+    if(attrs) for(var k in attrs){ if(k==="class") e.className=attrs[k]; else e.setAttribute(k,attrs[k]); }
+    if(html!==undefined) e.innerHTML=html;
+    return e;
+  }
+  function norm(s){
+    return (s||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[.,;:!¡?¿"“”]/g,"").replace(/\s+/g," ").trim();
+  }
+  var n=0; var items=[]; // {card, check(), answered(), lock(bool)}
+
+  // ---------- PARTE 1: V/F ----------
+  var sVF=document.getElementById("s-vf");
+  VF.forEach(function(q,i){
+    n++; var id="vf"+i;
+    var card=el("div",{class:"q"});
+    card.appendChild(el("div",{class:"stem"},'<span class="num">'+n+'.</span>'+q.s));
+    var vf=el("div",{class:"vf"});
+    vf.appendChild(el("label",{class:"opt"},'<input type="radio" name="'+id+'" value="v"> Verdadero'));
+    vf.appendChild(el("label",{class:"opt"},'<input type="radio" name="'+id+'" value="f"> Falso'));
+    card.appendChild(vf);
+    var jbox=el("div",{class:"just"}); jbox.hidden=true;
+    jbox.appendChild(el("p",null,"¿Por qué es falsa?"));
+    var jopts=q.just || ["La afirmación exagera: solo es cierta en algunos casos.","La afirmación confunde dos conceptos distintos.","La afirmación contradice la definición del concepto."];
+    jopts.forEach(function(t,k){
+      jbox.appendChild(el("label",{class:"opt"},'<input type="radio" name="'+id+'j" value="'+k+'"> '+t));
+    });
+    card.appendChild(jbox);
+    var fb=el("div",{class:"fb"}); card.appendChild(fb);
+    sVF.appendChild(card);
+    card.querySelectorAll('input[name="'+id+'"]').forEach(function(r){
+      r.addEventListener("change",function(){ jbox.hidden = (r.value!=="f") ; update(); });
+    });
+    items.push({card:card,fb:fb,
+      answered:function(){
+        var v=card.querySelector('input[name="'+id+'"]:checked'); if(!v) return false;
+        if(v.value==="f") return !!card.querySelector('input[name="'+id+'j"]:checked');
+        return true;
+      },
+      check:function(){
+        var v=card.querySelector('input[name="'+id+'"]:checked');
+        if(!v) return [false,"Sin responder. Correcta: "+(q.v?"Verdadero.":"Falso.")];
+        if(q.v){
+          return v.value==="v" ? [true,"Correcto. "+q.fb] : [false,"Incorrecto: es verdadera. "+q.fb];
+        }
+        if(v.value==="v") return [false,"Incorrecto: es falsa. "+q.just[q.j]];
+        var j=card.querySelector('input[name="'+id+'j"]:checked');
+        if(!j) return [false,"Marcaste Falso, pero falta la justificación. "+q.just[q.j]];
+        return (+j.value===q.j) ? [true,"Correcto, con la justificación adecuada."] : [false,"Es falsa, pero la justificación no es correcta. "+q.just[q.j]];
+      }});
+  });
+
+  // ---------- PARTE 2: CORRELACIÓN ----------
+  var sM=document.getElementById("s-match");
+  var colB=el("div",{class:"col-b"},"<strong>Ejemplos</strong><ol>"+MATCH_B.map(function(t){return "<li>"+t+"</li>";}).join("")+"</ol>");
+  sM.appendChild(colB);
+  MATCH.forEach(function(q,i){
+    n++; var id="m"+i;
+    var card=el("div",{class:"q"});
+    var row=el("div",{class:"row"});
+    var sel='<select name="'+id+'" aria-label="Ejemplo para '+q.c+'"><option value="">Elegí…</option>'+["a","b","c","d","e","f"].map(function(l){return '<option value="'+l+'">'+l+'</option>';}).join("")+'</select>';
+    card.innerHTML='<div class="match"><div class="row"><span class="concept"><span class="num">'+n+'.</span>'+q.c+'</span>'+sel+'</div></div>';
+    var fb=el("div",{class:"fb"}); card.appendChild(fb);
+    sM.appendChild(card);
+    card.querySelector("select").addEventListener("change",update);
+    items.push({card:card,fb:fb,
+      answered:function(){ return !!card.querySelector("select").value; },
+      check:function(){
+        var v=card.querySelector("select").value;
+        var txt=MATCH_B.filter(function(t){return t.charAt(0)===q.a;})[0];
+        return v===q.a ? [true,"Correcto."] : [false,(v?"Incorrecto. ":"Sin responder. ")+"Correcta: "+txt];
+      }});
+  });
+
+  // ---------- PARTE 3: COMPLETAR ----------
+  var sF=document.getElementById("s-fill");
+  sF.appendChild(el("div",{class:"bank"},"<strong>Banco de palabras:</strong><br>"+BANK.map(function(w){return "<span>"+w+"</span>";}).join("")));
+  FILL.forEach(function(q,i){
+    n++; var id="f"+i;
+    var card=el("div",{class:"q"});
+    card.innerHTML='<div class="stem" style="font-weight:400"><span class="num" style="font-weight:600">'+n+'.</span>'+q.pre+' <input type="text" name="'+id+'" aria-label="Respuesta '+n+'"> '+q.post+'</div>';
+    var fb=el("div",{class:"fb"}); card.appendChild(fb);
+    sF.appendChild(card);
+    card.querySelector("input").addEventListener("input",update);
+    items.push({card:card,fb:fb,
+      answered:function(){ return norm(card.querySelector("input").value)!==""; },
+      check:function(){
+        var v=norm(card.querySelector("input").value);
+        if(!v) return [false,"Sin responder. Correcta: "+q.show+"."];
+        return q.ok.indexOf(v)>-1 ? [true,"Correcto."] : [false,"Incorrecto. Correcta: "+q.show+"."];
+      }});
+  });
+
+  // ---------- PARTE 4: OPCIÓN MÚLTIPLE ----------
+  var sMC=document.getElementById("s-mc");
+  var L=["a","b","c","d"];
+  MC.forEach(function(q,i){
+    n++; var id="mc"+i;
+    var card=el("div",{class:"q"});
+    card.appendChild(el("div",{class:"stem"},'<span class="num">'+n+'.</span>'+q.s));
+    q.o.forEach(function(t,k){
+      card.appendChild(el("label",{class:"opt"},'<input type="radio" name="'+id+'" value="'+k+'"> '+L[k]+') '+t));
+    });
+    var fb=el("div",{class:"fb"}); card.appendChild(fb);
+    sMC.appendChild(card);
+    card.querySelectorAll("input").forEach(function(r){ r.addEventListener("change",update); });
+    items.push({card:card,fb:fb,
+      answered:function(){ return !!card.querySelector('input[name="'+id+'"]:checked'); },
+      check:function(){
+        var v=card.querySelector('input[name="'+id+'"]:checked');
+        var right=L[q.a]+") "+q.o[q.a];
+        if(!v) return [false,"Sin responder. Correcta: "+right];
+        return +v.value===q.a ? [true,"Correcto. "+q.fb] : [false,"Incorrecto. Correcta: "+right+" "+q.fb];
+      }});
+  });
+
+  // ---------- LÓGICA ----------
+  var TOTAL=items.length; // 24
+  var progress=document.getElementById("progress");
+  var warn=document.getElementById("warn");
+  var graded=false;
+  function update(){
+    var c=items.filter(function(it){return it.answered();}).length;
+    progress.textContent="Respondidas: "+c+" de "+TOTAL;
+  }
+  function setDisabled(d){
+    document.querySelectorAll("#quiz input, #quiz select").forEach(function(x){ x.disabled=d; });
+  }
+  function grade(){
+    var pending=items.filter(function(it){return !it.answered();}).length;
+    if(pending>0 && !graded){
+      warn.hidden=false;
+      warn.textContent="Te faltan "+pending+" pregunta(s) por responder. Si corregís igual, cuentan como incorrectas. Presioná Corregir de nuevo para confirmar.";
+      if(!warn.dataset.armed){ warn.dataset.armed="1"; warn.scrollIntoView({behavior:"smooth",block:"center"}); return; }
+    }
+    warn.hidden=true; delete warn.dataset.armed;
+    var pts=0;
+    items.forEach(function(it){
+      var r=it.check();
+      it.card.classList.remove("ok","bad");
+      it.card.classList.add(r[0]?"ok":"bad");
+      it.fb.textContent=r[1];
+      if(r[0]) pts++;
+    });
+    graded=true; setDisabled(true);
+    var res=document.getElementById("result");
+    res.hidden=false;
+    document.getElementById("score").textContent=pts+" / "+TOTAL+" puntos";
+    var pct=pts/TOTAL, msg;
+    if(pct>=0.85) msg="¡Excelente! Dominás los fundamentos.";
+    else if(pct>=0.6) msg="Buen trabajo. Revisá las preguntas marcadas en rojo.";
+    else msg="Te conviene repasar el material teórico y volver a intentarlo.";
+    document.getElementById("scoreMsg").textContent=msg;
+    res.scrollIntoView({behavior:"smooth",block:"center"});
+  }
+  function reset(){
+    document.getElementById("quiz").reset();
+    items.forEach(function(it){ it.card.classList.remove("ok","bad"); it.fb.textContent=""; });
+    document.querySelectorAll(".just").forEach(function(j){ j.hidden=true; });
+    setDisabled(false); graded=false;
+    warn.hidden=true; delete warn.dataset.armed;
+    document.getElementById("result").hidden=true;
+    update(); window.scrollTo({top:0,behavior:"smooth"});
+  }
+  document.getElementById("btnCheck").addEventListener("click",grade);
+  document.getElementById("btnCheckTop").addEventListener("click",grade);
+  document.getElementById("btnReset").addEventListener("click",reset);
+  update();
+})();
+</script>
+</body>
+</html>
